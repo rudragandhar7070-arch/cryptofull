@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crypto AI Trading Platform</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            hackerBg: '#0F0F13',
+            cryptoGold: '#FFD700',
+            terminalGreen: '#00FF41',
+          },
+          fontFamily: {
+            mono: ['Space Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Inline CSS (no external style.css needed) -->
+  <style>
+    body { background-color: #0F0F13; }
+
+    .glass-panel {
+      background-color: rgba(15, 15, 19, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 255, 65, 0.3);
+      box-shadow: 0 0 15px rgba(0, 255, 65, 0.1);
+      transition: all 0.3s ease;
+    }
+    .terminal-text { text-shadow: 0 0 5px rgba(0, 255, 65, 0.4); }
+    .gold-text     { text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+
+    ::-webkit-scrollbar       { width: 8px; }
+    ::-webkit-scrollbar-track  { background: #0F0F13; }
+    ::-webkit-scrollbar-thumb  { background: #00FF41; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #00e63a; }
+
+    /* RGB Custom Cursor — desktop only */
+    @media (pointer: fine) {
+      body, a, button, input, textarea, [role="button"] { cursor: none; }
+      #custom-cursor {
+        position: fixed; top: 0; left: 0;
+        width: 14px; height: 14px; border-radius: 50%;
+        pointer-events: none; z-index: 99999;
+        mix-blend-mode: difference;
+        box-shadow: 0 0 10px currentColor;
+        will-change: transform; display: block;
+      }
+    }
+    @media (pointer: coarse) {
+      #custom-cursor { display: none !important; }
+      body { cursor: auto; }
+    }
+  </style>
+</head>
+
+<body class="bg-hackerBg text-terminalGreen font-mono antialiased m-0 p-0 overflow-x-hidden selection:bg-terminalGreen/30 selection:text-hackerBg">
+
+  <!-- Custom RGB Cursor (desktop only) -->
+  <div id="custom-cursor" class="hidden md:block"></div>
+
+  <!-- 3D Canvas -->
+  <canvas id="webgl-canvas" class="fixed top-0 left-0 w-full h-full -z-10"></canvas>
+
+  <!-- ═══════════════════════ PAGE CONTENT ═══════════════════════ -->
+  <div id="smooth-wrapper">
+    <div id="smooth-content" class="relative z-10 pointer-events-none">
+      <div class="pointer-events-auto">
+
+        <!-- ──── HERO ──── -->
+        <section class="min-h-screen flex flex-col items-center justify-center px-6 md:px-24 relative">
+          <div class="absolute top-8 left-8 fade-in-section glass-panel p-6 border-l-4 border-l-terminalGreen border-t-0 border-r-0 border-b-0 rounded-none bg-hackerBg/80 z-10 w-[90%] md:w-auto">
+            <h1 class="text-2xl md:text-4xl font-bold mb-2 text-white tracking-tight">> ALGORITHMIC_GEN</h1>
+            <p class="text-sm text-terminalGreen/80 max-w-sm terminal-text">Executing high-frequency quantitative models.</p>
+          </div>
+          <div class="absolute bottom-8 left-8 z-10 fade-in-section" style="transition-delay:.5s">
+            <div class="bg-hackerBg/80 backdrop-blur-md border border-terminalGreen/50 p-4 rounded-md shadow-[0_0_15px_rgba(0,255,65,0.2)] w-56 text-sm">
+              <h3 class="text-cryptoGold font-bold border-b border-terminalGreen/30 pb-2 mb-2 uppercase tracking-widest">BTC Node_</h3>
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between"><span class="text-gray-400">Hashrate:</span><span class="text-terminalGreen">632 EH/s</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Block:</span><span class="text-terminalGreen animate-pulse">841,202</span></div>
+                <div class="flex justify-between"><span class="text-gray-400">Status:</span><span class="text-terminalGreen font-bold">> SYNCED</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ──── LIVE PRICES ──── -->
+        <section class="py-24 px-6 md:px-24 relative mt-20">
+          <div class="max-w-7xl mx-auto fade-in-section">
+            <div class="flex items-center gap-3 mb-10">
+              <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <h2 class="text-3xl font-bold text-white uppercase tracking-widest">Live_Feed</h2>
+            </div>
+            <div class="glass-panel rounded-lg p-8 grid grid-cols-1 md:grid-cols-3 gap-8 border-t-4 border-t-terminalGreen bg-hackerBg/90">
+              <div class="text-left border-b md:border-b-0 md:border-r border-terminalGreen/20 pb-6 md:pb-0 md:pr-6">
+                <p class="text-xs tracking-widest text-gray-500 uppercase mb-2">Bitcoin (BTC)</p>
+                <p class="text-4xl font-bold text-white transition-colors duration-300" id="btc-price">Connecting...</p>
+              </div>
+              <div class="text-left border-b md:border-b-0 md:border-r border-terminalGreen/20 py-6 md:py-0 md:px-6">
+                <p class="text-xs tracking-widest text-gray-500 uppercase mb-2">Ethereum (ETH)</p>
+                <p class="text-4xl font-bold text-white transition-colors duration-300" id="eth-price">Connecting...</p>
+              </div>
+              <div class="text-left pt-6 md:pt-0 md:pl-6">
+                <p class="text-xs tracking-widest text-gray-500 uppercase mb-2">Solana (SOL)</p>
+                <p class="text-4xl font-bold text-white transition-colors duration-300" id="sol-price">Connecting...</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ──── SERVICES ──── -->
+        <section class="py-32 px-6 md:px-24">
+          <div class="max-w-7xl mx-auto">
+            <h2 class="text-3xl font-bold mb-12 text-white uppercase text-center md:text-left">> OUR_SERVICES</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div class="glass-panel p-6 bg-hackerBg/90 fade-in-section border-t-4 border-t-cryptoGold">
+                <div class="mb-4 text-cryptoGold"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+                <h3 class="text-lg font-bold text-white mb-2 uppercase">24/7 AI Trading</h3>
+                <p class="text-sm text-gray-400">Deploy proprietary machine learning models that trade crypto markets around the clock without human fatigue.</p>
+              </div>
+              <div class="glass-panel p-6 bg-hackerBg/90 fade-in-section border-t-4 border-t-terminalGreen">
+                <div class="mb-4 text-terminalGreen"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+                <h3 class="text-lg font-bold text-white mb-2 uppercase">Grid Automation</h3>
+                <p class="text-sm text-gray-400">High-frequency grid bots execute hundreds of micro-trades during sideways consolidation automatically.</p>
+              </div>
+              <div class="glass-panel p-6 bg-hackerBg/90 fade-in-section border-t-4 border-t-blue-500">
+                <div class="mb-4 text-blue-500"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+                <h3 class="text-lg font-bold text-white mb-2 uppercase">Smart DCA</h3>
+                <p class="text-sm text-gray-400">Dynamic Dollar-Cost Averaging algorithms that scale your positions during dips, lowering your entry price.</p>
+              </div>
+              <div class="glass-panel p-6 bg-hackerBg/90 fade-in-section border-t-4 border-t-purple-500">
+                <div class="mb-4 text-purple-500"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+                <h3 class="text-lg font-bold text-white mb-2 uppercase">Fund Security</h3>
+                <p class="text-sm text-gray-400">Non-custodial. The bot operates via API keys without withdrawal permissions. You hold the keys.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ──── HOW IT WORKS ──── -->
+        <section class="min-h-screen py-32 px-6 md:px-24 flex items-center justify-start">
+          <div class="max-w-3xl fade-in-section glass-panel p-8 md:p-12 bg-hackerBg/95 border-l-4 border-l-terminalGreen rounded-none">
+            <h2 class="text-3xl font-bold mb-8 text-white uppercase flex items-center gap-3">
+              <span class="text-terminalGreen animate-pulse">#</span> HOW_IT_WORKS
+            </h2>
+            <div class="space-y-8 text-sm text-gray-300 terminal-text leading-relaxed">
+              <div class="flex gap-4 items-start">
+                <span class="text-cryptoGold font-bold text-lg">01.</span>
+                <div><h4 class="text-white font-bold mb-1 text-base">Connect API</h4><p>Securely link your exchange via read/trade-only API keys. We never have withdrawal access to your funds.</p></div>
+              </div>
+              <div class="flex gap-4 items-start">
+                <span class="text-cryptoGold font-bold text-lg">02.</span>
+                <div><h4 class="text-white font-bold mb-1 text-base">Select Algorithm</h4><p>Choose from predefined Grid/DCA templates or custom-build your own strategy with technical indicators.</p></div>
+              </div>
+              <div class="flex gap-4 items-start">
+                <span class="text-cryptoGold font-bold text-lg">03.</span>
+                <div><h4 class="text-white font-bold mb-1 text-base">Automated Execution</h4><p>The engine monitors WebSocket price feeds 24/7, executing trades milliseconds after your parameters are met.</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ──── ABOUT US ──── -->
+        <section class="min-h-screen py-32 px-6 md:px-24 flex items-center justify-end">
+          <div class="max-w-2xl fade-in-section glass-panel p-8 md:p-12 bg-hackerBg/90">
+            <div class="relative z-10">
+              <h2 class="text-3xl font-bold mb-6 text-white flex items-center gap-3 uppercase"><span class="text-terminalGreen">_</span>ABOUT US</h2>
+              <p class="text-lg leading-relaxed text-terminalGreen/90 terminal-text">We provide advanced, automated crypto analysis and trading tools designed for precision. Our proprietary bots handle the heavy lifting of technical analysis, allowing you to deploy automated Grid and DCA (Dollar-Cost Averaging) strategies with ease. Maximize your market efficiency while the bot monitors the charts 24/7.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ──── ABOUT THE OWNER ──── -->
+        <section class="min-h-screen py-32 px-6 md:px-24 flex items-center justify-center relative">
+          <div class="absolute inset-0 bg-gradient-to-b from-transparent via-terminalGreen/5 to-transparent pointer-events-none"></div>
+          <div class="max-w-4xl w-full fade-in-section glass-panel p-10 md:p-16 bg-[#0A0A0E] border border-white/10 shadow-[0_0_30px_rgba(255,215,0,0.1)] rounded-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-terminalGreen via-cryptoGold to-blue-500 animate-pulse"></div>
+            <h2 class="text-3xl md:text-4xl font-bold mb-10 text-white uppercase text-center tracking-widest">> ABOUT_THE_OWNER <span class="animate-ping text-terminalGreen">_</span></h2>
+            <div class="p-6 md:p-10 bg-black/60 border border-white/5 rounded-lg shadow-inner">
+              <p class="text-base md:text-lg leading-loose text-gray-300 font-mono">"Behind the code is a passionate developer and Class X student based in Ghaziabad, India. Combining a strong academic foundation with a deep interest in financial technology, I built this platform to make automated crypto analysis accessible. By bridging the gap between complex market algorithms and user-friendly design, my goal is to help users leverage sophisticated Grid and DCA trading strategies with ease."</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ──── FOOTER ──── -->
+        <footer class="py-12 text-center text-terminalGreen/50 border-t border-terminalGreen/20 bg-hackerBg">
+          <p>EOF // 2026 // SYSTEM_ONLINE</p>
+        </footer>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ CHATBOT WIDGET ═══════════════════════ -->
+  <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto">
+    <!-- Chat Window -->
+    <div id="chat-window" class="mb-4 bg-hackerBg/95 backdrop-blur-xl border border-terminalGreen/40 rounded-lg shadow-[0_0_20px_rgba(0,255,65,0.15)] flex flex-col h-96 w-72 md:w-80 transition-all duration-300 transform scale-95 opacity-0 origin-bottom-right pointer-events-none absolute bottom-[60px] right-0">
+      <div class="p-3 border-b border-terminalGreen/30 flex justify-between items-center bg-terminalGreen/5 rounded-t-lg">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 bg-terminalGreen rounded-full animate-pulse"></div>
+          <span class="text-white font-bold text-sm">Doge_AI_Terminal</span>
+        </div>
+        <button id="chat-close" class="text-gray-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="chat-history" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 text-xs">
+        <div class="self-start bg-terminalGreen/10 border border-terminalGreen/20 p-2 rounded max-w-[85%]">
+          <span class="text-terminalGreen">> System:</span> Wow. Much algorithm. Very crypto. How can I assist your trading today?
+        </div>
+      </div>
+      <div class="p-3 border-t border-terminalGreen/30">
+        <div class="flex gap-2">
+          <span class="text-terminalGreen">></span>
+          <input id="chat-input" type="text" class="w-full bg-transparent outline-none text-white text-xs placeholder-gray-600" placeholder="Ask about markets..." />
+        </div>
+      </div>
+    </div>
+    <!-- Toggle Button -->
+    <button id="chat-toggle-btn" class="w-14 h-14 rounded-full bg-terminalGreen/10 border border-terminalGreen text-terminalGreen shadow-[0_0_15px_rgba(0,255,65,0.3)] hover:bg-terminalGreen hover:text-hackerBg hover:shadow-[0_0_25px_rgba(0,255,65,0.6)] transition-all duration-300 flex items-center justify-center relative z-10">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════ SCRIPTS ═══════════════════════ -->
+  <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+  // ═══════════════════════════════════════════════════════════
+  // 1. LIVE PRICES (Binance WebSocket)
+  // ═══════════════════════════════════════════════════════════
+  (function initLivePrices() {
+    const cryptos = {
+      btc: { symbol: 'btcusdt', el: 'btc-price', last: 0, tid: null },
+      eth: { symbol: 'ethusdt', el: 'eth-price', last: 0, tid: null },
+      sol: { symbol: 'solusdt', el: 'sol-price', last: 0, tid: null },
+    };
+    const streams = Object.values(cryptos).map(c => c.symbol + '@trade').join('/');
+    const ws = new WebSocket('wss://stream.binance.com:9443/ws/' + streams);
+
+    ws.onmessage = (event) => {
+      const d = JSON.parse(event.data);
+      let key = null;
+      if (d.s === 'BTCUSDT') key = 'btc';
+      else if (d.s === 'ETHUSDT') key = 'eth';
+      else if (d.s === 'SOLUSDT') key = 'sol';
+      if (!key) return;
+
+      const c = cryptos[key];
+      const price = parseFloat(d.p);
+      const el = document.getElementById(c.el);
+      if (!el) return;
+
+      el.innerText = '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (c.last !== 0) el.style.color = price > c.last ? '#4ade80' : price < c.last ? '#f87171' : 'white';
+      clearTimeout(c.tid);
+      c.tid = setTimeout(() => { el.style.color = 'white'; }, 500);
+      c.last = price;
+    };
+
+    ws.onerror = () => {
+      Object.values(cryptos).forEach(c => {
+        const el = document.getElementById(c.el);
+        if (el) el.innerText = 'Offline';
+      });
+    };
+  })();
+
+  // ═══════════════════════════════════════════════════════════
+  // 2. LENIS SMOOTH SCROLL + GSAP FADE-INS
+  // ═══════════════════════════════════════════════════════════
+  const lenis = new Lenis({ duration: 1.2, easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)), direction: 'vertical', smooth: true });
+  (function lenisLoop(time) { lenis.raf(time); requestAnimationFrame(lenisLoop); })(0);
+
+  gsap.registerPlugin(ScrollTrigger);
+  document.querySelectorAll('.fade-in-section').forEach(el => {
+    gsap.fromTo(el, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 1, scrollTrigger: { trigger: el, start: 'top 85%', end: 'bottom 20%', toggleActions: 'play none none reverse' } });
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // 3. THREE.JS — Scene, Bitcoin, Doge, Particles
+  // ═══════════════════════════════════════════════════════════
+  let mouse = { x: 0, y: 0 }, realMouseX = innerWidth / 2, realMouseY = innerHeight / 2;
+  addEventListener('mousemove', e => {
+    mouse.x = (e.clientX / innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / innerHeight) * 2 + 1;
+    realMouseX = e.clientX; realMouseY = e.clientY;
+  });
+
+  const canvas = document.getElementById('webgl-canvas');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#0F0F13');
+  scene.fog = new THREE.FogExp2('#0F0F13', 0.02);
+
+  const sizes = { width: innerWidth, height: innerHeight };
+  const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100);
+  camera.position.z = 10;
+  scene.add(camera);
+
+  scene.add(new THREE.AmbientLight('#ffffff', 0.4));
+  const dL1 = new THREE.DirectionalLight('#FFD700', 1.5); dL1.position.set(10, 10, 5); scene.add(dL1);
+  const dL2 = new THREE.DirectionalLight('#00FF41', 1);   dL2.position.set(-10, -10, -5); scene.add(dL2);
+
+  // Particles
+  const pGeo = new THREE.BufferGeometry();
+  const pArr = new Float32Array(3000 * 3);
+  for (let i = 0; i < pArr.length; i++) pArr[i] = (Math.random() - 0.5) * 50;
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pArr, 3));
+  const particles = new THREE.Points(pGeo, new THREE.PointsMaterial({ size: 0.05, color: '#00FF41', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending }));
+  scene.add(particles);
+
+  // Bitcoin
+  const btcGroup = new THREE.Group(), coinInner = new THREE.Group();
+  btcGroup.add(coinInner); scene.add(btcGroup);
+
+  const tex = new THREE.TextureLoader().load('https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Bitcoin.svg/512px-Bitcoin.svg.png');
+  const goldMat = new THREE.MeshPhysicalMaterial({ color: '#FFD700', metalness: 1, roughness: 0.15, clearcoat: 1 });
+  const faceMat = new THREE.MeshStandardMaterial({ color: '#FFD700', map: tex, metalness: 0.5, roughness: 0.3 });
+  const coin = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.2, 64), [goldMat, faceMat, faceMat]);
+  coin.rotation.x = Math.PI / 2; coin.rotation.y = Math.PI / 2;
+  coinInner.add(coin);
+
+  const rMat = new THREE.MeshStandardMaterial({ color: '#B8860B', metalness: 0.8, roughness: 0.4 });
+  const rGeo = new THREE.RingGeometry(1.4, 1.5, 64);
+  const rF = new THREE.Mesh(rGeo, rMat); rF.position.z = 0.11;
+  const rB = new THREE.Mesh(rGeo, rMat); rB.position.z = -0.11; rB.rotation.y = Math.PI;
+  coinInner.add(rF, rB);
+
+  btcGroup.position.set(0, 0, 0);
+  btcGroup.scale.setScalar(sizes.width < 768 ? 0.8 : 1.2);
+
+  // Bitcoin scroll animation
+  const tl = gsap.timeline({ scrollTrigger: { trigger: 'body', start: 'top top', end: 'bottom bottom', scrub: 1.5 } });
+  tl.to(btcGroup.rotation, { x: Math.PI * 6, y: Math.PI * 12, ease: 'none' }, 0);
+  tl.to(btcGroup.position, { y: 3, z: -15, ease: 'power1.inOut' }, 0);
+  tl.to(btcGroup.scale,    { x: 0.3, y: 0.3, z: 0.3, ease: 'power1.inOut' }, 0);
+
+  // Doge (attached to camera)
+  const dogeG = new THREE.Group(), dogeH = new THREE.Group();
+  dogeG.add(dogeH); camera.add(dogeG);
+  dogeG.position.set(2.2, -1.2, -4); dogeG.scale.setScalar(0.12); dogeG.rotation.y = -0.4;
+
+  const fur = new THREE.MeshStandardMaterial({ color: '#e5b05c', roughness: 0.7 });
+  const lFur = new THREE.MeshStandardMaterial({ color: '#f4d499', roughness: 0.8 });
+  const blk = new THREE.MeshStandardMaterial({ color: '#111', roughness: 0.5 });
+
+  dogeH.add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.4, 1.4), fur));
+  const sn = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), lFur); sn.position.set(0, -0.2, 0.8); dogeH.add(sn);
+  const ns = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.2, 0.1), blk); ns.position.set(0, -0.1, 1.15); dogeH.add(ns);
+  const lE = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.1), blk); lE.position.set(-0.4, 0.2, 0.72); dogeH.add(lE);
+  const rE = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.1), blk); rE.position.set(0.4, 0.2, 0.72); dogeH.add(rE);
+  const gl = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 0.1), new THREE.MeshStandardMaterial({ color: '#00FF41', emissive: '#00FF41', emissiveIntensity: 0.5, transparent: true, opacity: 0.6 }));
+  gl.position.set(0, 0.2, 0.8); dogeH.add(gl);
+  const eGeo = new THREE.ConeGeometry(0.3, 0.8, 4);
+  const lEar = new THREE.Mesh(eGeo, fur); lEar.position.set(-0.6, 0.9, 0); lEar.rotation.z = 0.2; dogeH.add(lEar);
+  const rEar = new THREE.Mesh(eGeo, fur); rEar.position.set(0.6, 0.9, 0); rEar.rotation.z = -0.2; dogeH.add(rEar);
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+
+  addEventListener('resize', () => {
+    sizes.width = innerWidth; sizes.height = innerHeight;
+    camera.aspect = sizes.width / sizes.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(sizes.width, sizes.height);
+    if (sizes.width < 768) { dogeG.position.set(1.5, -1, -4); dogeG.scale.setScalar(0.1); }
+    else { dogeG.position.set(2.2, -1.2, -4); dogeG.scale.setScalar(0.12); }
+  });
+  dispatchEvent(new Event('resize'));
+
+  // Cursor
+  const cursorEl = document.getElementById('custom-cursor');
+  let curX = innerWidth / 2, curY = innerHeight / 2, hue = 0;
+
+  // Render Loop
+  const clock = new THREE.Clock();
+  (function tick() {
+    const t = clock.getElapsedTime();
+    coinInner.rotation.y += 0.01;
+    coinInner.position.y = Math.sin(t * 2) * 0.2;
+    dogeH.rotation.y = THREE.MathUtils.lerp(dogeH.rotation.y, mouse.x * 0.8, 0.1);
+    dogeH.rotation.x = THREE.MathUtils.lerp(dogeH.rotation.x, -mouse.y * 0.8, 0.1);
+    particles.rotation.y = t * 0.02;
+
+    if (matchMedia('(pointer:fine)').matches && cursorEl) {
+      curX = THREE.MathUtils.lerp(curX, realMouseX, 0.15);
+      curY = THREE.MathUtils.lerp(curY, realMouseY, 0.15);
+      hue = (hue + 1) % 360;
+      cursorEl.style.transform = `translate3d(${curX - 7}px,${curY - 7}px,0)`;
+      cursorEl.style.backgroundColor = cursorEl.style.color = `hsl(${hue},100%,50%)`;
+    }
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  })();
+
+  // ═══════════════════════════════════════════════════════════
+  // 4. CHATBOT — Connected to /api/chat backend
+  // ═══════════════════════════════════════════════════════════
+  const chatWin    = document.getElementById('chat-window');
+  const chatToggle = document.getElementById('chat-toggle-btn');
+  const chatClose  = document.getElementById('chat-close');
+  const chatInput  = document.getElementById('chat-input');
+  const chatHist   = document.getElementById('chat-history');
+  let chatOpen = false;
+
+  function toggleChat() {
+    chatOpen = !chatOpen;
+    if (chatOpen) {
+      chatWin.classList.remove('scale-95','opacity-0','pointer-events-none');
+      chatWin.classList.add('scale-100','opacity-100','pointer-events-auto');
+      chatToggle.classList.add('scale-0');
+      chatInput.focus();
+    } else {
+      chatWin.classList.add('scale-95','opacity-0','pointer-events-none');
+      chatWin.classList.remove('scale-100','opacity-100','pointer-events-auto');
+      chatToggle.classList.remove('scale-0');
+    }
+  }
+  chatToggle.addEventListener('click', toggleChat);
+  chatClose.addEventListener('click', toggleChat);
+
+  function appendMsg(sender, text, isUser) {
+    const div = document.createElement('div');
+    div.className = 'p-2 rounded max-w-[85%] text-xs ' + (isUser ? 'self-end bg-blue-500/20 border border-blue-500/30' : 'self-start bg-terminalGreen/10 border border-terminalGreen/20');
+    div.innerHTML = '<span class="' + (isUser ? 'text-blue-400' : 'text-terminalGreen') + '">> ' + sender + ':</span> ' + text;
+    chatHist.appendChild(div);
+    chatHist.scrollTop = chatHist.scrollHeight;
+  }
+
+  chatInput.addEventListener('keypress', async e => {
+    if (e.key !== 'Enter' || !chatInput.value.trim()) return;
+    const msg = chatInput.value.trim();
+    chatInput.value = '';
+    chatInput.disabled = true;
+    appendMsg('You', msg, true);
+
+    // Loading indicator
+    const loader = document.createElement('div');
+    loader.className = 'self-start text-xs text-gray-500 animate-pulse';
+    loader.textContent = '> thinking...';
+    chatHist.appendChild(loader);
+    chatHist.scrollTop = chatHist.scrollHeight;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await res.json();
+      loader.remove();
+      appendMsg('Doge AI', data.reply, false);
+    } catch {
+      loader.remove();
+      appendMsg('Error', 'Connection to AI Core failed. Are you running the server?', false);
+    }
+    chatInput.disabled = false;
+    chatInput.focus();
+  });
+  </script>
+</body>
+</html>
